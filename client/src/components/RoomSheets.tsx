@@ -1,4 +1,3 @@
-import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import type { RoomSnapshot } from '../../../shared/protocol.ts';
 import { client } from '../lib/room-client.ts';
@@ -17,7 +16,7 @@ export function InviteSheet({ open, onClose, code }: { open: boolean; onClose: (
 
   useEffect(() => {
     if (!open) return;
-    void QRCode.toDataURL(link, { margin: 0, width: 344, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } }).then(setQr);
+    void import('qrcode').then(({ default: QRCode }) => QRCode.toDataURL(link, { margin: 0, width: 344, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } })).then(setQr);
   }, [open, link]);
 
   const copy = async () => {

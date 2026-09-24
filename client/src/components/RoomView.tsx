@@ -9,8 +9,8 @@ import { springs } from '../lib/physics.ts';
 import { SyncController, type StageStatus } from '../player/controller.ts';
 import { Mesh } from '../rtc/mesh.ts';
 import { canBroadcastScreen, captureVideo, openMic, openScreen, SpeakingMeter } from '../rtc/voice.ts';
-import { edgeColors, loadImage } from '../three/ambient.ts';
-import { ReactionLayer } from '../three/reactions.ts';
+import { edgeColors, loadImage } from '../three/palette.ts';
+import type { ReactionLayer } from '../three/reactions.ts';
 import { AddSheet } from './AddSheet.tsx';
 import { useAmbient, useAmbientRect } from './AmbientCanvas.tsx';
 import { ChatPanel } from './ChatPanel.tsx';
@@ -290,21 +290,26 @@ export function RoomView({ room, me }: { room: RoomSnapshot; me: string }) {
   useEffect(() => {
     const canvas = stageRef.current?.reactions;
     if (!canvas) return;
-    let layer: ReactionLayer;
-    try {
-      layer = new ReactionLayer(canvas, reduce);
-    } catch {
-      return;
-    }
-    layerRef.current = layer;
-    const ro = new ResizeObserver(([e]) => e && layer.resize(e.contentRect.width, e.contentRect.height));
-    ro.observe(canvas);
-    const onReact = ({ emoji }: { emoji: string }) => layer.burst(emoji);
+    let layer: ReactionLayer | null = null;
+    let cancelled = false;
+    const ro = new ResizeObserver(([e]) => e && layer?.resize(e.contentRect.width, e.contentRect.height));
+    void import('../three/reactions.ts').then(({ ReactionLayer }) => {
+      if (cancelled) return;
+      try {
+        layer = new ReactionLayer(canvas, reduce);
+      } catch {
+        return; // no WebGL: reactions still show up as nothing worse than silence
+      }
+      layerRef.current = layer;
+      ro.observe(canvas);
+    });
+    const onReact = ({ emoji }: { emoji: string }) => layer?.burst(emoji);
     client.onReact.add(onReact);
     return () => {
+      cancelled = true;
       client.onReact.delete(onReact);
       ro.disconnect();
-      layer.dispose();
+      layer?.dispose();
       layerRef.current = null;
     };
   }, [reduce]);

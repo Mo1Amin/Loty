@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Ambient } from '../three/ambient.ts';
+import type { Ambient } from '../three/ambient.ts';
 import { usePrefersReducedMotion } from '../lib/hooks.ts';
 
 const AmbientContext = createContext<Ambient | null>(null);
@@ -14,15 +14,21 @@ export function AmbientProvider({ children }: { children: ReactNode }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     let a: Ambient | null = null;
-    try {
-      a = new Ambient(canvas, reduce);
-    } catch {
-      return; // no WebGL: the app is simply dark
-    }
-    setAmbient(a);
+    let cancelled = false;
     const onResize = () => a?.resize();
-    window.addEventListener('resize', onResize);
+    // WebGL arrives after the first paint; until then the app is simply dark.
+    void import('../three/ambient.ts').then(({ Ambient }) => {
+      if (cancelled) return;
+      try {
+        a = new Ambient(canvas, reduce);
+      } catch {
+        return; // no WebGL
+      }
+      setAmbient(a);
+      window.addEventListener('resize', onResize);
+    });
     return () => {
+      cancelled = true;
       window.removeEventListener('resize', onResize);
       a?.dispose();
       setAmbient(null);

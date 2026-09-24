@@ -1,13 +1,12 @@
 import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
-import { Color } from 'three';
 import { client } from '../lib/room-client.ts';
 import { readPref, usePrefersReducedMotion, useClient, writePref } from '../lib/hooks.ts';
 import { navigate } from '../lib/router.ts';
 import { useAmbient, useAmbientRect } from './AmbientCanvas.tsx';
 import { Icon } from './Icon.tsx';
 import { Row } from './ui.tsx';
-import type { EdgeColors } from '../three/ambient.ts';
+import { hexToRgb, type EdgeColors } from '../three/palette.ts';
 
 // Four "scenes" the hero screen cycles through, as if a film were playing on it.
 const SCENES: [string, string, string, string][] = [
@@ -16,7 +15,7 @@ const SCENES: [string, string, string, string][] = [
   ['#274d2f', '#b8a34a', '#0e1a10', '#3d7a52'], // forest
   ['#5c1f1f', '#d0643a', '#1a0d0a', '#8a3a28'], // fire
 ];
-const toEdges = (s: string[]): EdgeColors => s.map((h) => new Color(h)) as EdgeColors;
+const toEdges = (s: string[]): EdgeColors => s.map(hexToRgb) as EdgeColors;
 
 export function Landing() {
   const [name, setName] = useState(() => readPref('name', ''));

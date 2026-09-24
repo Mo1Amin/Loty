@@ -53,15 +53,15 @@ const fragment = /* glsl */ `
   }
 `;
 
-export type EdgeColors = [top: Color, right: Color, bottom: Color, left: Color];
+import type { EdgeColors } from './palette.ts';
 
 export class Ambient {
   private renderer: WebGLRenderer;
   private scene = new Scene();
   private camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   private material: ShaderMaterial;
-  private target: EdgeColors;
-  private current: EdgeColors;
+  private target: Color[];
+  private current: Color[];
   private intensity = 0;
   private targetIntensity = 0;
   private raf = 0;
@@ -116,7 +116,7 @@ export class Ambient {
   }
 
   setColors(colors: EdgeColors | null, intensity = 0.85) {
-    if (colors) this.target = colors;
+    if (colors) this.target = colors.map(([r, g, b]) => new Color(r, g, b));
     this.targetIntensity = colors ? intensity : 0;
     this.kick();
   }
@@ -171,59 +171,4 @@ export class Ambient {
     this.material.dispose();
     this.renderer.dispose();
   }
-}
-
-// ── reading colours ─────────────────────────────────────────────────────────
-
-const sampler = typeof document !== 'undefined' ? document.createElement('canvas') : null;
-
-/**
- * Average colour of each edge band of an image or video frame.
- * Returns null when the pixels are not readable (a cross-origin video without CORS).
- */
-export function edgeColors(source: CanvasImageSource, width: number, height: number): EdgeColors | null {
-  if (!sampler || !width || !height) return null;
-  const W = 24;
-  const H = 14;
-  sampler.width = W;
-  sampler.height = H;
-  const ctx = sampler.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return null;
-  let data: Uint8ClampedArray;
-  try {
-    ctx.drawImage(source, 0, 0, W, H);
-    data = ctx.getImageData(0, 0, W, H).data;
-  } catch {
-    return null;
-  }
-  const band = (x0: number, y0: number, x1: number, y1: number) => {
-    let r = 0, g = 0, b = 0, n = 0;
-    for (let y = y0; y < y1; y++)
-      for (let x = x0; x < x1; x++) {
-        const i = (y * W + x) * 4;
-        r += data[i]!;
-        g += data[i + 1]!;
-        b += data[i + 2]!;
-        n++;
-      }
-    return tame(new Color(r / n / 255, g / n / 255, b / n / 255));
-  };
-  return [band(0, 0, W, 3), band(W - 4, 0, W, H), band(0, H - 3, W, H), band(0, 0, 4, H)];
-}
-
-/** Lift saturation a little and cap brightness, so white scenes glow instead of glaring. */
-function tame(c: Color): Color {
-  const hsl = { h: 0, s: 0, l: 0 };
-  c.getHSL(hsl);
-  return new Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.25), Math.min(0.5, hsl.l * 0.9));
-}
-
-export function loadImage(url: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = url;
-  });
 }

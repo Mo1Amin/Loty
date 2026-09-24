@@ -464,7 +464,8 @@ label.row:active {
   gap: 8px;
 }
 .code-row .field {
-  font: 600 1.25rem/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font: 600 1.25rem/1 var(--font);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   text-align: center;
@@ -512,7 +513,8 @@ label.row:active {
   font: var(--t-subhead);
 }
 .gate-code {
-  font: 600 1.0625rem/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font: 600 1.0625rem/1 var(--font);
   letter-spacing: 0.2em;
   color: var(--label);
   direction: ltr;
@@ -562,6 +564,7 @@ label.row:active {
   justify-content: center;
 }
 .code-chip {
+  font-variant-numeric: tabular-nums;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -569,7 +572,7 @@ label.row:active {
   padding: 0 14px;
   border-radius: 999px;
   background: var(--fill-2);
-  font: 600 0.9375rem/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 600 0.9375rem/1 var(--font);
   letter-spacing: 0.14em;
   direction: ltr;
 }
@@ -1247,8 +1250,9 @@ label.row:active {
   image-rendering: pixelated;
 }
 .big-code {
+  font-variant-numeric: tabular-nums;
   text-align: center;
-  font: 700 2rem/1.2 ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 700 2rem/1.2 var(--font);
   letter-spacing: 0.22em;
   direction: ltr;
   margin: 14px 0 2px;
