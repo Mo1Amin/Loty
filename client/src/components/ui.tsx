@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { dismissToast, usePrefersReducedMotion, useToasts } from '../lib/hooks.ts';
 import { springs } from '../lib/physics.ts';
 
@@ -42,14 +42,35 @@ export function Segmented<T extends string>({
 
 export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   const reduce = usePrefersReducedMotion();
+  // Flip under the finger now; the server's answer arrives a round trip later.
+  // If it never agrees (refused, offline), fall back to what is true.
+  const [local, setLocal] = useState(checked);
+  const revert = useRef(0);
+  useEffect(() => {
+    setLocal(checked);
+    window.clearTimeout(revert.current);
+  }, [checked]);
+  useEffect(() => () => window.clearTimeout(revert.current), []);
   return (
     <span className="switch">
-      <input type="checkbox" role="switch" checked={checked} aria-label={label} onChange={(e) => onChange(e.target.checked)} />
+      <input
+        type="checkbox"
+        role="switch"
+        checked={local}
+        aria-label={label}
+        onChange={(e) => {
+          const next = e.target.checked;
+          setLocal(next);
+          onChange(next);
+          window.clearTimeout(revert.current);
+          revert.current = window.setTimeout(() => setLocal(checked), 2_000);
+        }}
+      />
       <span className="switch-track" />
       <motion.span
         className="switch-thumb"
         initial={false}
-        animate={{ x: checked ? -20 : 0 }} // RTL: "on" slides to the left edge
+        animate={{ x: local ? -20 : 0 }} // RTL: "on" slides to the left edge
         transition={reduce ? { duration: 0 } : springs.snappy}
       />
     </span>

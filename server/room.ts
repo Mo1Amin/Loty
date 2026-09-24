@@ -100,7 +100,7 @@ export class Room {
     };
     this.members.set(member.id, member);
     this.emptySince = null;
-    this.notice(`${member.name} دخل الغرفة`, now);
+    this.notice(`${member.name} في الغرفة دلوقتي`, now);
     return member;
   }
 
@@ -138,7 +138,7 @@ export class Room {
     if (!member) return;
     this.members.delete(memberId);
     this.endBroadcastsBy(memberId, now);
-    this.notice(reason === 'kicked' ? `${member.name} اتشال من الغرفة` : `${member.name} خرج`, now);
+    this.notice(reason === 'kicked' ? `المضيف شال ${member.name} من الغرفة` : `${member.name} مش في الغرفة دلوقتي`, now);
     if (member.isHost) this.promoteNextHost(now);
     if (this.onlineCount() === 0) this.emptySince ??= now;
   }
@@ -168,7 +168,7 @@ export class Room {
     if (!to || to.id === from.id) return fail('invalid', 'الشخص ده مش في الغرفة.');
     from.isHost = false;
     to.isHost = true;
-    this.notice(`${to.name} بقى المضيف`, now);
+    this.notice(`المضيف دلوقتي: ${to.name}`, now);
     return { ok: true };
   }
 
@@ -178,7 +178,7 @@ export class Room {
     for (const m of this.members.values()) m.isHost = false;
     if (next) {
       next.isHost = true;
-      this.notice(`${next.name} بقى المضيف`, now);
+      this.notice(`المضيف دلوقتي: ${next.name}`, now);
     }
   }
 

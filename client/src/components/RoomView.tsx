@@ -341,7 +341,7 @@ export function RoomView({ room, me }: { room: RoomSnapshot; me: string }) {
       if (shownKnocks.current.has(k.id)) continue;
       shownKnocks.current.add(k.id);
       toast({
-        text: `${k.name} عايز يدخل`,
+        text: `طلب دخول من ${k.name}`,
         duration: 0,
         actions: [
           { label: 'لأ', onClick: () => client.answerKnock(k.id, false) },

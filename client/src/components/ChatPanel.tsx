@@ -123,7 +123,7 @@ export function ChatPanel({ onSeek, onAddLink, speaking }: { onSeek: (t: number)
         </div>
       </div>
       <div className="typing" aria-live="polite">
-        {typers.length === 1 ? `${typers[0]} بيكتب…` : typers.length > 1 ? `${typers.length} بيكتبوا…` : ''}
+        {typers.length === 1 ? `في رسالة جاية من ${typers[0]}…` : typers.length > 1 ? `${typers.length} بيكتبوا…` : ''}
       </div>
       <Composer replyTo={replyTo} onClearReply={() => setReplyTo(null)} />
     </>

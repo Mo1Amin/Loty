@@ -273,7 +273,7 @@ export const Stage = forwardRef<StageHandle, StageProps>(function Stage(props, r
         {playback?.holdFor && !isBroadcast && (
           <div className="hold-chip" role="status">
             <span className="spinner" style={{ width: 14, height: 14, margin: 0, borderWidth: 2 }} />
-            مستنيين <bdi>{playback.holdFor}</bdi> يحمّل
+            مستنيين التحميل عند <bdi>{playback.holdFor}</bdi>
           </div>
         )}
 

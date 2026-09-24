@@ -18,9 +18,9 @@ export function PeoplePanel({ speaking, onInvite }: { speaking: ReadonlySet<stri
         <div className="group">
           {room.members.map((m) => {
             const tags: string[] = [];
-            if (!m.online) tags.push('بيرجع…');
-            if (m.buffering) tags.push('بيحمّل');
-            if (m.streams.screen) tags.push('بيبث');
+            if (!m.online) tags.push('الاتصال اتقطع، مستنيين يرجع');
+            if (m.buffering) tags.push('تحميل…');
+            if (m.streams.screen) tags.push('بث مباشر');
             const canManage = iAmHost && m.id !== me;
             const Tag = canManage ? 'button' : 'div';
             return (
@@ -29,7 +29,7 @@ export function PeoplePanel({ speaking, onInvite }: { speaking: ReadonlySet<stri
                 <span className="row-text">
                   <span className="row-title">
                     {m.name}
-                    {m.id === me && <span style={{ color: 'var(--label-2)' }}> (انت)</span>}{' '}
+                    {m.id === me && <span style={{ color: 'var(--label-2)' }}> (أنا)</span>}{' '}
                     {m.isHost && (
                       <span className="badge host">
                         <Icon name="crown" size="sm" /> المضيف
