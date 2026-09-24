@@ -23,13 +23,14 @@ echo Building...
 call npm run build || goto :fail
 
 start "Loty server" cmd /k "set PORT=4000&& npm start"
-timeout /t 3 /nobreak >nul
+rem Give the server a moment to start (ping works even without a console, unlike timeout).
+ping -n 4 127.0.0.1 >nul
 
 echo.
 echo Loty: https://%NGROK_DOMAIN%
 echo Close this window to stop sharing.
 echo.
-call npx --yes ngrok http --domain=%NGROK_DOMAIN% 4000
+call npx --yes ngrok http 4000 --url=https://%NGROK_DOMAIN%
 goto :eof
 
 :fail
