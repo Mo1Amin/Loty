@@ -95,6 +95,7 @@ npm start                               # start
 | المتغير | لازمته |
 |---|---|
 | `PORT` | البورت (افتراضي 4000) |
+| `CF_TURN_KEY_ID` · `CF_TURN_API_TOKEN` | **الأسهل:** TURN من Cloudflare (أول 1000 جيجا في الشهر مجانًا). السيرفر بيطلب بيانات دخول مؤقتة لوحده ويجددها. من لوحة Cloudflare: Realtime ← TURN Server ← Create |
 | `TURN_URL` · `TURN_USERNAME` · `TURN_CREDENTIAL` | سيرفر TURN للبث والصوت على شبكات الموبايل. أكتر من رابط بفاصلة: `turn:turn.example.com:3478,turns:turn.example.com:5349` |
 | `ICE_SERVERS` | بديل كامل: JSON لقايمة ICE لو محتاج تحكم أكتر |
 | `CORS_ORIGIN` | لو الواجهة على دومين غير السيرفر |

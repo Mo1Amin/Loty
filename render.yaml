@@ -9,7 +9,13 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "24"
-      # Broadcast and voice on mobile networks need a TURN relay. Fill these in the dashboard.
+      # Broadcast and voice on mobile networks need a TURN relay. Easiest: Cloudflare TURN
+      # (Realtime → TURN Server → Create); fill these two in the dashboard.
+      - key: CF_TURN_KEY_ID
+        sync: false
+      - key: CF_TURN_API_TOKEN
+        sync: false
+      # Or any fixed TURN server:
       - key: TURN_URL
         sync: false
       - key: TURN_USERNAME
