@@ -313,7 +313,11 @@ export class SyncController {
     this.detectUserSeek(local, now, state);
 
     if (now < this.userUntil || this.buffering) return;
-    if (!state.playing) return;
+    if (!state.playing) {
+      // A pause that arrived while we were deferring to the person's own action still has to land.
+      if (p.isPlaying() && !this.isOwn) this.apply(true);
+      return;
+    }
     if (!p.isPlaying() && !this.isOwn) {
       void this.startPlaying();
       return;
@@ -359,7 +363,9 @@ export class SyncController {
         this.userAction('play', this.player?.getTime() ?? 0);
       }),
       pause: fromCurrent(() => {
-        if (this.isOwn || !this.playback?.playing || this.isLiveItem()) return;
+        if (this.isOwn || this.isLiveItem()) return;
+        // Paused while the room was only waiting for someone: that wait becomes a real pause.
+        if (!this.playback?.playing && !this.playback?.holdFor) return;
         this.userAction('pause', this.player?.getTime() ?? 0);
       }),
       seeked: (time) => {
@@ -455,5 +461,21 @@ export class SyncController {
 
   currentTime() {
     return this.player?.getTime() ?? 0;
+  }
+
+  /** Internal state for diagnosing sync in the field (enable with sessionStorage 'loty.debug'). */
+  debug() {
+    const p = this.player;
+    return {
+      item: this.item?.id ?? null,
+      playback: this.playback,
+      playing: p?.isPlaying() ?? null,
+      time: p?.getTime() ?? null,
+      muted: p?.isMuted() ?? null,
+      buffering: this.buffering,
+      ownFor: Math.round(this.ownUntil - performance.now()),
+      userFor: Math.round(this.userUntil - performance.now()),
+      status: this.status,
+    };
   }
 }

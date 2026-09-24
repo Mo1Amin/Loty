@@ -5,8 +5,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server, type Socket } from 'socket.io';
 import { LIMITS, REACTIONS, type ClientToServer, type ServerToClient } from '../shared/protocol.ts';
-import { metaRouter } from './meta.ts';
-import { cleanName, newId, newRoomCode, normalizeCode, Room, type Result } from './room.ts';
+import { metaRouter, oembed } from './meta.ts';
+import { cleanName, HOLD_LIMIT_MS, isPlaceholderTitle, newId, newRoomCode, normalizeCode, Room, type Result } from './room.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -178,14 +178,21 @@ io.on('connection', (socket: LotySocket) => {
   }));
 
   socket.on('play:ended', withRoom((r, _me, { itemId }) => {
-    if (r.ended(String(itemId), Date.now())) broadcastState(r);
+    if (r.ended(String(itemId), Date.now())) {
+      broadcastState(r);
+      void fillTitles(r);
+    }
   }));
 
   const holdTimers = new Map<string, NodeJS.Timeout>();
   socket.on('play:buffering', withRoom((r, me, { buffering }) => {
     r.setBuffering(me, !!buffering, Date.now());
     const check = () => {
-      if (r.evaluateHold(Date.now())) broadcastState(r);
+      if (r.evaluateHold(Date.now())) {
+        broadcastState(r);
+        // A hold just started: come back when its time limit runs out.
+        if (r.playback.holdFor) setTimeout(check, HOLD_LIMIT_MS + 100);
+      }
     };
     clearTimeout(holdTimers.get(r.code));
     if (buffering) holdTimers.set(r.code, setTimeout(check, 1_300));
@@ -196,7 +203,10 @@ io.on('connection', (socket: LotySocket) => {
     if (!allow.queue(socket)) return denied(ack);
     const res = r.addItems(me, Array.isArray(items) ? items.filter(isNewItem) : [], mode === 'now' || mode === 'next' ? mode : 'end', Date.now());
     ack(res);
-    if (res.ok) broadcastState(r);
+    if (res.ok) {
+      broadcastState(r);
+      void fillTitles(r);
+    }
   }));
 
   socket.on('queue:remove', withRoom((r, me, { id }, ack) => {
@@ -361,6 +371,24 @@ io.on('connection', (socket: LotySocket) => {
     }
   });
 });
+
+/**
+ * Looks up real titles for the next few items that still carry a placeholder,
+ * so the "now playing" line never says "untitled" for long.
+ */
+async function fillTitles(r: Room) {
+  const todo = r.queue.filter((q) => (q.source.kind === 'youtube' || q.source.kind === 'vimeo') && isPlaceholderTitle(q.title)).slice(0, 12);
+  if (todo.length === 0) return;
+  let changed = false;
+  await Promise.all(
+    todo.map(async (q) => {
+      const s = q.source as { kind: 'youtube' | 'vimeo'; id: string };
+      const meta = await oembed(s.kind, s.id);
+      if (meta.title && r.setMeta(q.id, { title: meta.title })) changed = true;
+    }),
+  );
+  if (changed && rooms.get(r.code) === r) io.to(r.code).emit('room:state', r.snapshot());
+}
 
 function isNewItem(x: unknown): x is import('../shared/protocol.ts').NewItem {
   if (!x || typeof x !== 'object') return false;

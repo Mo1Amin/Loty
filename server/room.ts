@@ -19,6 +19,7 @@ import { positionAt } from '../shared/sync.ts';
 
 // No 0/O, 1/I/L: codes get read aloud and typed on phones.
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export const HOLD_LIMIT_MS = 8_000;
 const HUES = [211, 145, 28, 340, 270, 180, 48, 0, 300, 100, 230, 15];
 
 export interface MemberRecord extends Member {
@@ -54,6 +55,11 @@ export function cleanName(input: unknown): string {
   return [...name].slice(0, LIMITS.nameLength).join('') || 'ضيف';
 }
 
+/** Titles the client sets before the real one is known. */
+export function isPlaceholderTitle(title: string): boolean {
+  return title === 'بدون عنوان' || /^فيديو \d+ من البلاي ليست$/.test(title);
+}
+
 export class Room {
   readonly code: string;
   settings: RoomSettings = { control: 'everyone', waitForBuffering: true, locked: false };
@@ -64,6 +70,9 @@ export class Room {
   /** Knocking sockets waiting for the host, by knock id. */
   knocks = new Map<string, { name: string; socketId: string }>();
   emptySince: number | null = null;
+  private holdSince = 0;
+  /** After giving up on a slow connection, do not hold again straight away. */
+  private noHoldUntil = 0;
 
   constructor(code: string) {
     this.code = code;
@@ -274,10 +283,18 @@ export class Room {
     const current = this.queue[0];
     if (!p.itemId || current?.source.kind === 'broadcast') return false;
 
+    // One slow connection should not hold everyone hostage: wait a while, then carry on
+    // and let that player catch up by seeking once it has data.
+    if (p.holdFor && now - this.holdSince >= HOLD_LIMIT_MS) {
+      this.noHoldUntil = now + 20_000;
+      this.setPlayback({ playing: true, holdFor: undefined }, now);
+      return true;
+    }
     const stuck = [...this.members.values()].find(
       (m) => m.online && m.bufferingSince !== null && now - m.bufferingSince >= after,
     );
-    if (this.settings.waitForBuffering && p.playing && stuck) {
+    if (this.settings.waitForBuffering && p.playing && stuck && now >= this.noHoldUntil) {
+      this.holdSince = now;
       this.setPlayback({ playing: false, position: positionAt(p, now), holdFor: stuck.name }, now);
       return true;
     }
@@ -375,7 +392,7 @@ export class Room {
     const item = this.queue.find((q) => q.id === id);
     if (!item) return false;
     let changed = false;
-    if (meta.title && (item.title === 'بدون عنوان' || item.title.startsWith('http') || item.source.kind === 'youtube')) {
+    if (meta.title && (isPlaceholderTitle(item.title) || item.title.startsWith('http') || item.source.kind === 'youtube')) {
       const title = String(meta.title).slice(0, 200);
       if (title !== item.title) {
         item.title = title;

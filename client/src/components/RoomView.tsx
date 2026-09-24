@@ -109,7 +109,20 @@ export function RoomView({ room, me }: { room: RoomSnapshot; me: string }) {
       toast: (m) => toast(m),
     });
     setController(c);
-    return () => c.destroy();
+    // Field diagnostics: with sessionStorage 'loty.debug' set, the controller's view is mirrored
+    // into the DOM, where any devtools (or test driver) can read it.
+    let debugTimer = 0;
+    try {
+      if (sessionStorage.getItem('loty.debug')) {
+        debugTimer = window.setInterval(() => (document.documentElement.dataset.lotyDebug = JSON.stringify(c.debug())), 250);
+      }
+    } catch {
+      /* storage blocked */
+    }
+    return () => {
+      window.clearInterval(debugTimer);
+      c.destroy();
+    };
   }, [mesh, publishStreams]);
 
   useEffect(() => {
@@ -425,9 +438,9 @@ export function RoomView({ room, me }: { room: RoomSnapshot; me: string }) {
           <div className="now-text">
             <h1 className="now-title">{title}</h1>
             <div className="now-sub">
-              {current && status.sync !== 'idle' && <span className={`sync-pill ${status.sync}`}>{syncLabel[status.sync]}</span>}
+              {current && status.sync !== 'idle' && <span className={`sync-pill ${status.sync}`} data-drift={status.drift.toFixed(2)}>{syncLabel[status.sync]}</span>}
               {current && current.source.kind !== 'broadcast' && (
-                <button className="speed-btn" onClick={() => (canControl ? setSheet('speed') : toast('المضيف بس اللي يغيّر السرعة.'))} aria-label="سرعة التشغيل">
+                <button className="speed-btn" dir="ltr" onClick={() => (canControl ? setSheet('speed') : toast('المضيف بس اللي يغيّر السرعة.'))} aria-label="سرعة التشغيل">
                   {room.playback.rate === 1 ? '1×' : `${room.playback.rate}×`}
                 </button>
               )}

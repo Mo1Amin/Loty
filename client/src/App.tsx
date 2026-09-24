@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { client } from './lib/room-client.ts';
 import { useClient } from './lib/hooks.ts';
 import { navigate, roomCodeFrom, usePath } from './lib/router.ts';
@@ -19,10 +19,16 @@ export function App() {
     if (inRoom && roomCodeFrom(location.pathname) !== room.code) navigate(`/r/${room.code}`, !code);
   }, [inRoom, room?.code, code]);
 
-  // Leaving via the browser's back button leaves the room too.
+  // Leaving via the browser's back button leaves the room too — but only after
+  // the address has actually been on the room, not in the moment right after creating it.
+  const shownRoom = useRef(false);
   useEffect(() => {
-    if (inRoom && !code) client.leave();
-  }, [inRoom, code]);
+    if (inRoom && code === room.code) shownRoom.current = true;
+    else if (inRoom && !code && shownRoom.current) {
+      shownRoom.current = false;
+      client.leave();
+    }
+  }, [inRoom, code, room?.code]);
 
   return (
     <AmbientProvider>

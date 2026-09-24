@@ -40,10 +40,11 @@ const fragment = /* glsl */ `
     wl *= wl; wr *= wr; wt *= wt; wb *= wb;
     vec3 col = (uLeft * wl + uRight * wr + uTop * wt + uBottom * wb) / max(wl + wr + wt + wb, 1e-4);
 
-    float reach = max(half_.x, half_.y) * 0.9 + 60.0;
+    // Light reaches about as far as a real screen would light a wall: capped, so a big player does not flood the room.
+    float reach = min(max(half_.x, half_.y) * 0.8 + 60.0, 240.0);
     float angle = atan(p.y, p.x);
     reach *= 1.0 + uBreath * 0.06 * sin(uTime * 0.35 + angle * 2.0);
-    float glow = exp(-max(d, 0.0) / reach * 2.4) * uIntensity;
+    float glow = exp(-max(d, 0.0) / reach * 1.6) * uIntensity;
     glow *= smoothstep(-40.0, 6.0, d); // nothing under the player itself
 
     vec3 c = col * glow;
@@ -114,7 +115,7 @@ export class Ambient {
     this.kick();
   }
 
-  setColors(colors: EdgeColors | null, intensity = 0.55) {
+  setColors(colors: EdgeColors | null, intensity = 0.85) {
     if (colors) this.target = colors;
     this.targetIntensity = colors ? intensity : 0;
     this.kick();

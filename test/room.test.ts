@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LIMITS, type NewItem } from '../shared/protocol.ts';
-import { normalizeCode, Room } from '../server/room.ts';
+import { HOLD_LIMIT_MS, normalizeCode, Room } from '../server/room.ts';
 
 const yt = (id: string): NewItem => ({ source: { kind: 'youtube', id: id.padEnd(11, 'x') }, title: id });
 
@@ -132,6 +132,20 @@ describe('playback', () => {
     expect(room.evaluateHold(3_000)).toBe(true);
     expect(room.playback.playing).toBe(true);
     expect(room.playback.holdFor).toBeUndefined();
+  });
+
+  it('gives up on one slow connection after the limit, and does not hold again at once', () => {
+    const { room, host, guest } = setup();
+    room.addItems(host.id, [yt('a')], 'end', 0);
+    room.setBuffering(guest.id, true, 0);
+    expect(room.evaluateHold(1_500)).toBe(true);
+    expect(room.playback.playing).toBe(false);
+    expect(room.evaluateHold(1_500 + HOLD_LIMIT_MS)).toBe(true);
+    expect(room.playback).toMatchObject({ playing: true });
+    expect(room.playback.holdFor).toBeUndefined();
+    // Still buffering, but the room keeps going for a while.
+    expect(room.evaluateHold(1_500 + HOLD_LIMIT_MS + 5_000)).toBe(false);
+    expect(room.playback.playing).toBe(true);
   });
 
   it('does not resume a pause somebody chose', () => {

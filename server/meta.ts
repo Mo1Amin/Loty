@@ -17,7 +17,7 @@ async function fetchJson(url: string, timeoutMs = 5_000): Promise<unknown> {
   return res.json();
 }
 
-async function oembed(kind: 'youtube' | 'vimeo', id: string): Promise<{ title: string | null; thumb?: string | undefined }> {
+export async function oembed(kind: 'youtube' | 'vimeo', id: string): Promise<{ title: string | null; thumb?: string | undefined }> {
   const key = `${kind}:${id}`;
   const cached = titles.get(key);
   if (cached && Date.now() - cached.at < TITLE_TTL) return cached;

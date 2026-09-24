@@ -33,11 +33,11 @@ export function Landing() {
   useEffect(() => {
     if (!ambient) return;
     let i = 0;
-    ambient.setColors(toEdges(SCENES[0]!), 0.7);
+    ambient.setColors(toEdges(SCENES[0]!), 1);
     if (reduce) return;
     const t = window.setInterval(() => {
       i = (i + 1) % SCENES.length;
-      ambient.setColors(toEdges(SCENES[i]!), 0.7);
+      ambient.setColors(toEdges(SCENES[i]!), 1);
     }, 4_500);
     return () => {
       window.clearInterval(t);

@@ -17,6 +17,7 @@ export async function createHtml5Player(host: HTMLElement, input: Html5Input, st
   host.appendChild(video);
 
   let objectUrl: string | null = null;
+  let ownSeek = false;
   let hls: { destroy(): void } | null = null;
   let destroyed = false;
   const live = input.type === 'stream';
@@ -44,7 +45,14 @@ export async function createHtml5Player(host: HTMLElement, input: Html5Input, st
       video.src = input.url;
     }
     if (startAt > 0) {
-      video.addEventListener('loadedmetadata', () => (video.currentTime = startAt), { once: true });
+      video.addEventListener(
+        'loadedmetadata',
+        () => {
+          ownSeek = true; // positioning a fresh player is not a person scrubbing
+          video.currentTime = startAt;
+        },
+        { once: true },
+      );
     }
   }
 
@@ -52,7 +60,12 @@ export async function createHtml5Player(host: HTMLElement, input: Html5Input, st
   video.addEventListener('pause', () => {
     if (!video.ended) events.pause();
   });
-  video.addEventListener('seeked', () => events.seeked(video.currentTime));
+  // `seeking`, not `seeked`: the intent is known the moment the scrub starts, while the
+  // data may take seconds to arrive — long enough for the room to pull the player back.
+  video.addEventListener('seeking', () => {
+    if (ownSeek) ownSeek = false;
+    else events.seeked(video.currentTime);
+  });
   video.addEventListener('waiting', () => events.buffering(true));
   video.addEventListener('playing', () => events.buffering(false));
   video.addEventListener('canplay', () => events.buffering(false));
