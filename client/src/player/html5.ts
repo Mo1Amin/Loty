@@ -18,6 +18,7 @@ export async function createHtml5Player(host: HTMLElement, input: Html5Input, st
 
   let objectUrl: string | null = null;
   let ownSeek = false;
+  let corsRetried = false;
   let hls: { destroy(): void } | null = null;
   let destroyed = false;
   const live = input.type === 'stream';
@@ -32,6 +33,7 @@ export async function createHtml5Player(host: HTMLElement, input: Html5Input, st
       objectUrl = URL.createObjectURL(input.file);
       video.src = objectUrl;
     } else if (input.hls && !video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.crossOrigin = 'anonymous';
       const { default: Hls } = await import('hls.js');
       if (!Hls.isSupported()) throw new Error('This browser cannot play HLS');
       const h = new Hls({ startPosition: startAt || -1, maxBufferLength: 30 });
@@ -42,6 +44,9 @@ export async function createHtml5Player(host: HTMLElement, input: Html5Input, st
       });
       hls = h;
     } else {
+      // Ask for CORS so the ambient light can read the picture. A server that does not allow
+      // it fails the load; then we retry without, and the video plays with no light.
+      video.crossOrigin = 'anonymous';
       video.src = input.url;
     }
     if (startAt > 0) {
@@ -75,6 +80,13 @@ export async function createHtml5Player(host: HTMLElement, input: Html5Input, st
   });
   video.addEventListener('error', () => {
     if (destroyed || live) return;
+    if (input.type === 'url' && !input.hls && !corsRetried && video.crossOrigin !== null && video.readyState === 0) {
+      corsRetried = true;
+      video.removeAttribute('crossorigin');
+      video.src = input.url;
+      video.load();
+      return;
+    }
     const code = video.error?.code;
     events.error({
       message:

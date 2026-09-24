@@ -40,16 +40,18 @@ function emojiTexture(emoji: string): CanvasTexture {
 export class ReactionLayer {
   private renderer: WebGLRenderer;
   private scene = new Scene();
-  private camera = new OrthographicCamera(0, 1, 0, 1, -10, 10);
+  private camera = new OrthographicCamera(0, 1, 1, 0, -10, 10);
   private particles: Particle[] = [];
   private raf = 0;
   private last = 0;
   private w = 1;
   private h = 1;
   private readonly still: boolean;
+  private readonly canvas: HTMLCanvasElement;
 
   constructor(canvas: HTMLCanvasElement, reduceMotion: boolean) {
     this.still = reduceMotion;
+    this.canvas = canvas;
     this.renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true, premultipliedAlpha: true });
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.setClearColor(0x000000, 0);
@@ -59,11 +61,11 @@ export class ReactionLayer {
     this.w = Math.max(1, width);
     this.h = Math.max(1, height);
     this.renderer.setSize(this.w, this.h, false);
-    // Pixel space, y down, like CSS.
+    // Pixel space with y up; particle positions are kept y-down like CSS and converted when drawn.
     this.camera.left = 0;
     this.camera.right = this.w;
-    this.camera.top = 0;
-    this.camera.bottom = this.h;
+    this.camera.top = this.h;
+    this.camera.bottom = 0;
     this.camera.updateProjectionMatrix();
   }
 
@@ -117,9 +119,9 @@ export class ReactionLayer {
       const fadeIn = this.still ? Math.min(1, p.age / 0.2) : 1;
       const fadeOut = Math.min(1, (p.life - p.age) / 0.6);
       const alpha = Math.max(0, Math.min(fadeIn, fadeOut));
-      p.sprite.position.set(x, p.y, 0);
+      p.sprite.position.set(x, this.h - p.y, 0);
       const s = p.size * Math.max(0, p.scale);
-      p.sprite.scale.set(s, -s, 1); // y is flipped in pixel space
+      p.sprite.scale.set(s, s, 1);
       (p.sprite.material as SpriteMaterial).opacity = alpha;
       if (p.age >= p.life) {
         this.scene.remove(p.sprite);
@@ -128,6 +130,7 @@ export class ReactionLayer {
       }
     }
     this.renderer.render(this.scene, this.camera);
+    this.canvas.dataset.live = String(this.particles.length);
     if (this.particles.length > 0) this.raf = requestAnimationFrame(this.frame);
     else {
       this.raf = 0;

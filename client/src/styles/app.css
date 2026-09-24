@@ -853,13 +853,14 @@ label.row:active {
   align-items: flex-end;
   max-width: 86%;
 }
+/* RTL iOS: what you sent sits on the left (the end), what others sent on the right (the start). */
 .msg.mine {
-  align-self: flex-start;
-  flex-direction: row;
-}
-.msg.theirs {
   align-self: flex-end;
   flex-direction: row-reverse;
+}
+.msg.theirs {
+  align-self: flex-start;
+  flex-direction: row;
 }
 .msg-spacer {
   width: 26px;

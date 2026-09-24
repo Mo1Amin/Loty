@@ -293,7 +293,8 @@ export class Room {
     const stuck = [...this.members.values()].find(
       (m) => m.online && m.bufferingSince !== null && now - m.bufferingSince >= after,
     );
-    if (this.settings.waitForBuffering && p.playing && stuck && now >= this.noHoldUntil) {
+    // Waiting only makes sense for someone else: alone, your own player simply catches up.
+    if (this.settings.waitForBuffering && p.playing && stuck && now >= this.noHoldUntil && this.onlineCount() > 1) {
       this.holdSince = now;
       this.setPlayback({ playing: false, position: positionAt(p, now), holdFor: stuck.name }, now);
       return true;
