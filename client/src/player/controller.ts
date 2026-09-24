@@ -156,9 +156,13 @@ export class SyncController {
   private keyFor(item: QueueItem): string {
     const s = item.source;
     if (s.kind === 'broadcast') {
-      const mine = s.hostId === this.deps.client.getState().me;
-      const stream = mine ? this.deps.localBroadcast()?.stream?.id ?? 'file' : this.deps.remoteScreen(s.hostId)?.id ?? 'none';
-      return `${item.id}:${stream}`;
+      if (this.isMine(s)) {
+        // A file broadcast's stream is captured *from* this player, so it must not be part of
+        // the key — otherwise publishing the stream rebuilds the player, which makes a new stream.
+        if (s.from === 'file') return `${item.id}:file`;
+        return `${item.id}:${this.deps.localBroadcast()?.stream?.id ?? 'none'}`;
+      }
+      return `${item.id}:${this.deps.remoteScreen(s.hostId)?.id ?? 'none'}`;
     }
     if (s.kind === 'local') return `${item.id}:${this.files.has(`${s.name}|${s.size}`) ? 'file' : 'none'}`;
     return item.id;
@@ -189,7 +193,7 @@ export class SyncController {
       }
       if (!player) return; // status already explains why
       this.player = player;
-      this.setStatus({ loading: false, sync: player.live ? 'live' : 'synced' });
+      this.setStatus({ loading: false, sync: player.live || item.source.kind === 'broadcast' ? 'live' : 'synced' });
       if (item.source.kind === 'broadcast' && item.source.from === 'file' && player.video && this.isMine(item.source)) {
         this.deps.onBroadcastVideo(player.video);
       }
@@ -400,7 +404,8 @@ export class SyncController {
     if (on) this.sawBuffering = true;
     if (on === this.buffering) return;
     this.buffering = on;
-    if (!this.isLiveItem()) this.deps.client.buffering(on);
+    if (this.isLiveItem()) return; // a live picture has nothing to wait for; the status stays "live"
+    this.deps.client.buffering(on);
     if (on) this.setStatus({ sync: 'buffering' });
   }
 

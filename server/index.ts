@@ -78,7 +78,16 @@ const allow = {
 
 type LotySocket = Socket<ClientToServer, ServerToClient>;
 
+const DEBUG = !!process.env.LOTY_DEBUG;
+
 io.on('connection', (socket: LotySocket) => {
+  if (DEBUG) {
+    socket.onAny((event, ...args) => {
+      if (event === 'clock:ping' || event === 'rtc:signal') return;
+      console.log(`[${socket.id.slice(0, 5)}] ${event}`, JSON.stringify(args.filter((a) => typeof a !== 'function')).slice(0, 200));
+    });
+    socket.on('disconnect', (reason) => console.log(`[${socket.id.slice(0, 5)}] disconnect: ${reason}`));
+  }
   let room: Room | null = null;
   let memberId: string | null = null;
   let knockId: string | null = null;

@@ -170,7 +170,9 @@ function ItemBody({ item, current, onPlay }: { item: QueueItem; current?: boolea
         {item.duration ? <span className="q-dur">{formatTime(item.duration)}</span> : null}
       </span>
       <span className="q-text">
-        <span className="q-title">{titleOf(item)}</span>
+        <span className="q-title">
+          <bdi>{titleOf(item)}</bdi>
+        </span>
         <span className="q-sub" style={{ display: 'block' }}>
           {current ? <span className="q-now">شغّال · </span> : null}
           ضافه {item.addedBy}

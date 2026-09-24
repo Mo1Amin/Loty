@@ -414,7 +414,7 @@ export class Room {
     this.endBroadcastsBy(memberId, now, false);
     const res = this.addItems(
       memberId,
-      [{ source: { kind: 'broadcast', hostId: memberId, label: cleanName(label) || 'بث', from }, title: `بث ${member.name}: ${label}`.slice(0, 200) }],
+      [{ source: { kind: 'broadcast', hostId: memberId, label: cleanName(label) || 'بث', from }, title: String(label).slice(0, 200) || (from === 'file' ? 'ملف' : 'شاشة') }],
       'now',
       now,
     );

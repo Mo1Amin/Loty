@@ -93,6 +93,7 @@ export function RoomView({ room, me }: { room: RoomSnapshot; me: string }) {
       onBroadcastVideo: (video) => {
         if (!video || !broadcastRef.current?.file) return;
         const start = () => {
+          if (broadcastRef.current?.stream) return; // already captured from this broadcast
           const stream = captureVideo(video);
           if (!stream) {
             toast('المتصفح ده مش بيقدر يبث ملف. جرّب Chrome أو Firefox على الكمبيوتر، أو خلي كل واحد يفتح نسخته.');
@@ -392,7 +393,10 @@ export function RoomView({ room, me }: { room: RoomSnapshot; me: string }) {
     synced: 'متزامن',
     'catching-up': status.drift > 0 ? 'بيستنى الباقي' : 'بيلحق الباقي',
     buffering: 'بيحمّل',
-    live: 'مباشر',
+    live:
+      current?.source.kind === 'broadcast'
+        ? `مباشر من ${room.members.find((m) => m.id === (current.source as { hostId: string }).hostId)?.name ?? 'حد'}`
+        : 'مباشر',
   };
   const others = room.members.filter((m) => m.id !== me);
   const title = current?.title ?? 'مفيش حاجة شغّالة';
@@ -436,7 +440,9 @@ export function RoomView({ room, me }: { room: RoomSnapshot; me: string }) {
 
         <div className="now">
           <div className="now-text">
-            <h1 className="now-title">{title}</h1>
+            <h1 className="now-title">
+              <bdi>{title}</bdi>
+            </h1>
             <div className="now-sub">
               {current && status.sync !== 'idle' && <span className={`sync-pill ${status.sync}`} data-drift={status.drift.toFixed(2)}>{syncLabel[status.sync]}</span>}
               {current && current.source.kind !== 'broadcast' && (
