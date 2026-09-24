@@ -1,0 +1,49 @@
+{
+  "name": "loty",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Watch anything together, on the same second — YouTube, Vimeo, direct links, local files, or a live screen broadcast.",
+  "author": "Mo Amin",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "node --watch server/index.ts",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "node server/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "icons": "node scripts/icons.ts"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@types/three": "^0.180.0",
+    "@types/youtube": "^0.1.2",
+    "@vimeo/player": "^2.30.4",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^9.2.1",
+    "hls.js": "^1.7.3",
+    "motion": "^12.23.12",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "socket.io-client": "^4.8.3",
+    "three": "^0.186.0",
+    "typescript": "^5.9.2",
+    "vite": "^8.3.0",
+    "vitest": "^4.0.0"
+  }
+}
