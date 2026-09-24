@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const SERVER = process.env.LOTY_SERVER ?? 'http://localhost:4000';

@@ -100,7 +100,7 @@ export class Room {
     return { ok: true };
   }
 
-  resume(memberId: string, secret: string, socketId: string, now: number): Result<{ member: MemberRecord }> {
+  resume(memberId: string, secret: string, socketId: string, _now: number): Result<{ member: MemberRecord }> {
     const member = this.members.get(memberId);
     if (!member || member.secret !== secret) return fail('expired', 'الجلسة القديمة انتهت. ادخل الغرفة من جديد.');
     member.socketId = socketId;
